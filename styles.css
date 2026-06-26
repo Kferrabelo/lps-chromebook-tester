@@ -473,3 +473,41 @@ footer { width: min(1160px, calc(100% - 44px)); }
   #keyboardCard .key.arrow-stack { height: 36px; }
   #keyboardCard .key.arrow-stack .key, #keyboardCard .key.tall { height: 16px; font-size: .62rem; }
 }
+
+
+/* v12 speed test */
+#speedCard { grid-column: span 2; }
+.speedtest-wrap {
+  position: relative;
+  width: 100%;
+  min-height: 360px;
+  height: 420px;
+  border: 1px solid #2b303b;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #050609;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.03);
+}
+.speedtest-wrap iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #050609;
+}
+.speedtest-credit {
+  text-align: right;
+  color: var(--muted);
+  font-size: .78rem;
+  margin-top: 8px;
+}
+.speedtest-credit a { color: #9eeeff; text-decoration: none; font-weight: 800; }
+.speedtest-credit a:hover { text-decoration: underline; }
+@media (max-width: 1180px) {
+  #speedCard { grid-column: 1 / -1; }
+}
+@media (max-width: 760px) {
+  #speedCard { grid-column: 1 / -1; }
+  .speedtest-wrap { height: 380px; }
+}

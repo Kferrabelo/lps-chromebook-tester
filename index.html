@@ -168,6 +168,33 @@
       <p class="note">Battery API support varies by browser and device policy.</p>
     </section>
 
+    <section class="card wide" id="speedCard">
+      <div class="card-head">
+        <div class="title-row">
+          <span class="tile-icon">⇅</span>
+          <div><h2>Speed Test</h2><p>Powered by OpenSpeedTest</p></div>
+        </div>
+        <span class="status neutral" id="speedStatus">Informational</span>
+      </div>
+      <p>Run a browser-based internet speed test for download, upload, ping, and jitter.</p>
+      <!-- OST Widget code start -->
+      <div class="ost-widget" style="text-align:right;">
+        <div style="min-height:360px;">
+          <div style="width:100%;height:0;padding-bottom:50%;position:relative;">
+            <iframe
+              id="speedtestFrame"
+              title="OpenSpeedTest internet speed test"
+              style="border:none;position:absolute;top:0;left:0;width:100%;height:100%;min-height:360px;border:none;overflow:hidden !important;"
+              src="//openspeedtest.com/speedtest">
+            </iframe>
+          </div>
+        </div>
+        Provided by <a href="https://openspeedtest.com" target="_blank" rel="noopener noreferrer">OpenSpeedtest.com</a>
+      </div>
+      <!-- OST Widget code end -->
+      <p class="note">This embedded widget uses OpenSpeedTest servers unless you later point it to a self-hosted OpenSpeedTest server.</p>
+    </section>
+
     <section class="card wide" id="systemCard">
       <div class="card-head">
         <div class="title-row">

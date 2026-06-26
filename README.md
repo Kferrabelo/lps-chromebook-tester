@@ -18,3 +18,13 @@ Version 10 updates: longer speaker test tone and Memory Info restored using navi
 ## Version 11 update
 
 System & Browser Info is informational only and no longer counts toward the pass/fail totals.
+
+
+## Speed Test
+
+This version includes an embedded OpenSpeedTest widget for download, upload, ping, and jitter testing. The embedded widget uses OpenSpeedTest servers unless you modify the iframe URL or self-host OpenSpeedTest.
+
+
+## v13 Update
+
+Embedded the OpenSpeedTest widget using the provided OST iframe code.
