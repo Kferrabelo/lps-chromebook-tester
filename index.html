@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LPS Chromebook Tester</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-icon" aria-hidden="true">▣</div>
+      <div>
+        <h1>LPS Chromebook Tester</h1>
+        <p>Live diagnostics · runs entirely in your browser</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <div class="score"><span class="dot pass"></span><span id="passCount">0</span> pass</div>
+      <div class="score"><span class="dot fail"></span><span id="failCount">0</span> fail</div>
+      <button id="resetAllBtn" class="ghost">Reset all</button>
+    </div>
+  </header>
+
+  <main class="dashboard">
+    <div class="dashboard-note">⌁ Run each test below. Allow camera & microphone permissions when prompted — nothing is uploaded or stored.</div>
+    <section class="card xl" id="webcamCard">
+      <div class="card-head">
+        <div class="title-row">
+          <span class="tile-icon">▣</span>
+          <div><h2>Webcam</h2><p>getUserMedia video preview</p></div>
+        </div>
+        <span class="status neutral" id="webcamStatus">Not tested</span>
+      </div>
+      <div class="preview-wrap">
+        <video id="webcamVideo" autoplay playsinline muted></video>
+        <div class="fps-badge" id="webcamFps">FPS: --</div>
+        <div id="cameraPlaceholder" class="placeholder">⌾<br><small>Camera preview</small></div>
+      </div>
+      <canvas id="snapshotCanvas" class="hidden"></canvas>
+      <div class="button-row">
+        <button id="webcamBtn" class="primary">Start camera</button>
+        <button id="snapshotBtn" disabled>Take snapshot</button>
+        <button id="stopWebcamBtn" disabled>Stop camera</button>
+      </div>
+      <div id="webcamDetails" class="details"></div>
+    </section>
+
+    <section class="card xl" id="keyboardCard">
+      <div class="card-head">
+        <div class="title-row">
+          <span class="tile-icon">⌨</span>
+          <div><h2>Keyboard</h2><p>Full-size ChromeOS keydown / keyup test</p></div>
+        </div>
+        <span class="status neutral" id="keyboardStatus">Not tested</span>
+      </div>
+      <div class="split-meta"><span>Press every key. Tested keys turn green.</span><strong><span id="testedKeyCount">0</span> keys</strong></div>
+      <label class="checkbox"><input type="checkbox" id="captureTyping" checked /> Capture typing for this test</label>
+      <div id="keyboardLayout" class="keyboard-layout" aria-label="ChromeOS keyboard layout"></div>
+      <div class="keyboard-footer">
+        <div id="lastKey" class="details mono">Waiting for input…</div>
+        <button id="clearKeysBtn">Reset keyboard</button>
+      </div>
+      <p class="note">Some top-row and power keys may be reserved by ChromeOS and may not be delivered to a website.</p>
+    </section>
+
+    <section class="card" id="micCard">
+      <div class="card-head">
+        <div class="title-row">
+          <span class="tile-icon">♬</span>
+          <div><h2>Microphone</h2><p>Web Audio API</p></div>
+        </div>
+        <span class="status neutral" id="micStatus">Not tested</span>
+      </div>
+      <div class="oscilloscope"><canvas id="micCanvas" height="74"></canvas></div>
+      <div class="level-row"><span>Level</span><strong id="micPercent">0%</strong></div>
+      <div class="meter"><div id="micMeter" class="meter-fill"></div></div>
+      <p>Speak or tap near the mic. Bars should react to sound.</p>
+      <button id="micBtn" class="primary">Start mic test</button>
+      <div id="micDetails" class="details"></div>
+    </section>
+
+    <section class="card" id="speakerCard">
+      <div class="card-head">
+        <div class="title-row">
+          <span class="tile-icon">▯</span>
+          <div><h2>Speakers</h2><p>Oscillator tone test</p></div>
+        </div>
+        <span class="status neutral" id="speakerStatus">Not tested</span>
+      </div>
+      <p>Play tones in each channel. Confirm you heard sound from the correct side.</p>
+      <div class="speaker-grid">
+        <button id="speakerLeftBtn" class="speaker-btn">◔<span>Left</span></button>
+        <button id="speakerBtn" class="speaker-btn">◉<span>Both</span></button>
+        <button id="speakerRightBtn" class="speaker-btn">◕<span>Right</span></button>
+      </div>
+      <div class="button-row result-buttons">
+        <button data-result="speaker" data-value="pass">I heard it</button>
+        <button data-result="speaker" data-value="fail">No sound</button>
+      </div>
+      <div id="speakerResult" class="details"></div>
+    </section>
+
+
+    <section class="card" id="touchpadCard">
+      <div class="card-head">
+        <div class="title-row">
+          <span class="tile-icon">⌖</span>
+          <div><h2>Touchpad / Mouse</h2><p>pointer events</p></div>
+        </div>
+        <span class="status neutral" id="touchpadStatus">Not tested</span>
+      </div>
+      <div id="touchpadArea" class="touchpad-area" tabindex="0" aria-label="Touchpad test area">
+        <div class="touchpad-help">move • click • right-click • scroll</div>
+        <span id="touchpadCursor" class="touchpad-cursor"></span>
+      </div>
+      <div class="touchpad-results">
+        <div id="touchLeft" class="touch-result">L-Click</div>
+        <div id="touchRight" class="touch-result">R-Click</div>
+        <div id="touchScroll" class="touch-result">Scroll 0</div>
+      </div>
+      <div class="keyboard-footer touchpad-footer">
+        <div id="touchpadCoords" class="details mono">X: 0 · Y: 0</div>
+        <button id="resetTouchpadBtn">Reset touchpad</button>
+      </div>
+      <p class="note">Move across the box, left-click, right-click/two-finger tap, and two-finger scroll. It passes after left and right click are detected.</p>
+    </section>
+
+
+    <section class="card" id="screenCard">
+      <div class="card-head">
+        <div class="title-row">
+          <span class="tile-icon">▥</span>
+          <div><h2>Screen / Pixels</h2><p>dead pixel check</p></div>
+        </div>
+        <span class="status neutral" id="screenStatus">Not tested</span>
+      </div>
+      <p>Cycle full-screen solid colors to spot dead or stuck pixels. Click to advance, Esc to exit.</p>
+      <div class="screen-swatches" aria-label="Screen test colors">
+        <span class="swatch" style="background:#ffffff" title="White"></span>
+        <span class="swatch" style="background:#000000" title="Black"></span>
+        <span class="swatch" style="background:#ff0000" title="Red"></span>
+        <span class="swatch" style="background:#00ff00" title="Green"></span>
+        <span class="swatch" style="background:#0000ff" title="Blue"></span>
+        <span class="swatch" style="background:#808080" title="Gray"></span>
+      </div>
+      <button id="screenLaunchBtn" class="primary full-width">Launch full-screen test</button>
+      <div id="screenDetails" class="details mono">Click launch to begin.</div>
+    </section>
+
+    <div id="screenOverlay" class="screen-overlay hidden" role="dialog" aria-modal="true" aria-label="Screen pixel test">
+      <div id="screenOverlayLabel" class="screen-overlay-label">White (1/6) · Click to advance · Esc to exit</div>
+      <button id="screenExitBtn" class="screen-exit-btn">Exit</button>
+    </div>
+    <section class="card" id="batteryCard">
+      <div class="card-head">
+        <div class="title-row">
+          <span class="tile-icon">↯</span>
+          <div><h2>Battery</h2><p>Battery Status API</p></div>
+        </div>
+        <span class="status neutral" id="batteryStatus">Not tested</span>
+      </div>
+      <div class="battery-wrap">
+        <div class="battery-shell"><div id="batteryLevel" class="battery-level"><span id="batteryPct">--</span></div></div>
+        <div id="batteryDetails" class="details mono">Waiting for battery check…</div>
+      </div>
+      <button id="batteryBtn" class="primary">Check battery</button>
+      <p class="note">Battery API support varies by browser and device policy.</p>
+    </section>
+
+    <section class="card wide" id="systemCard">
+      <div class="card-head">
+        <div class="title-row">
+          <span class="tile-icon">⌁</span>
+          <div><h2>System & Browser Info</h2><p>Browser-exposed ChromeOS details</p></div>
+        </div>
+        <span class="status neutral" id="systemStatus">Not tested</span>
+      </div>
+      <div class="info-grid" id="systemInfo"></div>
+      <p class="note">Normal websites cannot read Chromebook serial number, asset ID, exact model, full CPU model, firmware version, full physical storage inventory, Wi-Fi SSID, or whether the active network is Wi-Fi vs LAN. Managed Chrome extensions and Admin Console can access more.</p>
+    </section>
+
+  </main>
+
+  <footer>Best results: run in Chrome on ChromeOS over HTTPS or localhost. Camera and mic require user permission.</footer>
+  <script src="app.js"></script>
+</body>
+</html>
