@@ -511,3 +511,16 @@ footer { width: min(1160px, calc(100% - 44px)); }
   #speedCard { grid-column: 1 / -1; }
   .speedtest-wrap { height: 380px; }
 }
+
+
+/* v15 layout: place System & Browser Info to the right of Speed Test */
+@media (min-width: 1181px) {
+  #speedCard { grid-column: span 2; }
+  #systemCard { grid-column: span 3; }
+  #systemCard .info-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #systemCard .note { font-size: .8rem; margin-top: 12px; }
+  #speedCard .ost-widget iframe { min-height: 330px !important; }
+}
+@media (max-width: 1180px) {
+  #speedCard, #systemCard { grid-column: 1 / -1; }
+}

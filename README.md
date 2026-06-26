@@ -28,3 +28,9 @@ This version includes an embedded OpenSpeedTest widget for download, upload, pin
 ## v13 Update
 
 Embedded the OpenSpeedTest widget using the provided OST iframe code.
+
+
+## v15 update
+
+- Moved System & Browser Info next to the Speed Test card on wide screens.
+- System info remains informational only and does not affect Pass/Fail totals.
