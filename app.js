@@ -11,6 +11,9 @@ const state = {
   failedKeys: new Set(),
   system: {},
   streams: { mic: null, webcam: null },
+  keyboardListening: false,
+  micFrame: null,
+  micAudioContext: null,
 };
 
 // System & Browser Info is informational only and does not count toward pass/fail totals.
@@ -146,9 +149,6 @@ function labelFromKey(key) {
     keyboardLanguage: 'Keyboard Language',
     cpuLogicalCores: 'CPU Logical Cores',
     browserFullVersion: 'Browser Full Version',
-    memoryInfo: 'Memory Info',
-    storageCapacity: 'Local Storage Capacity',
-    storageRemaining: 'Local Storage Remaining',
     networkStatus: 'Network Status',
     screen: 'Screen'
   };
@@ -253,16 +253,12 @@ async function loadSystemInfo() {
     : `ChromeOS version not exposed; Browser ${browserFullVersion}`;
   const keyboardLanguage = await getKeyboardLanguageHint();
   const networkStatus = getNetworkStatusText();
-  const storageEstimate = await getStorageEstimate();
 
   state.system = {
     chromeOSOrBrowserVersion: versionDisplay,
     keyboardLanguage,
     cpuLogicalCores: navigator.hardwareConcurrency ? String(navigator.hardwareConcurrency) : 'Unavailable',
     browserFullVersion,
-    memoryInfo: getMemoryInfo(),
-    storageCapacity: storageEstimate.capacity,
-    storageRemaining: storageEstimate.remaining,
     screen: getScreenInfo(),
     networkStatus,
   };
@@ -336,16 +332,41 @@ function speakerTest(pan = 0, label = 'both') {
   }
 }
 
+function stopMicTest() {
+  if (state.micFrame) {
+    cancelAnimationFrame(state.micFrame);
+    state.micFrame = null;
+  }
+  if (state.streams.mic) {
+    state.streams.mic.getTracks().forEach(t => t.stop());
+    state.streams.mic = null;
+  }
+  if (state.micAudioContext) {
+    state.micAudioContext.close().catch(() => {});
+    state.micAudioContext = null;
+  }
+  $('micMeter').style.width = '0%';
+  $('micPercent').textContent = '0%';
+  $('micDetails').textContent = 'Microphone test stopped.';
+  $('stopMicBtn').disabled = true;
+  $('micBtn').disabled = false;
+  if (!$('micStatus').classList.contains('fail')) setStatus('micStatus', 'Stopped', 'neutral');
+}
+
 async function startMicTest() {
   try {
+    stopMicTest();
     setStatus('micStatus', 'Requesting', 'neutral');
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     state.streams.mic = stream;
     state.mic = 'access granted';
     setStatus('micStatus', 'Listening', 'pass');
+    $('micBtn').disabled = true;
+    $('stopMicBtn').disabled = false;
 
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     const ctx = new AudioCtx();
+    state.micAudioContext = ctx;
     const source = ctx.createMediaStreamSource(stream);
     const analyser = ctx.createAnalyser();
     analyser.fftSize = 2048;
@@ -355,6 +376,7 @@ async function startMicTest() {
     const c = canvas.getContext('2d');
 
     function draw() {
+      if (!state.streams.mic) return;
       analyser.getByteTimeDomainData(data);
       let sum = 0;
       for (const v of data) {
@@ -378,12 +400,14 @@ async function startMicTest() {
         if (i === 0) c.moveTo(x, y); else c.lineTo(x, y);
       }
       c.stroke();
-      requestAnimationFrame(draw);
+      state.micFrame = requestAnimationFrame(draw);
     }
     draw();
   } catch (err) {
     state.mic = `failed: ${err.message}`;
     $('micDetails').textContent = `Microphone test failed: ${err.message}`;
+    $('stopMicBtn').disabled = true;
+    $('micBtn').disabled = false;
     setStatus('micStatus', 'Failed', 'fail');
   }
 }
@@ -482,28 +506,29 @@ function takeSnapshot() {
 
 const keyboardRows = [
   [
-    ['Esc','esc',1.1,'Esc'], ['BrowserBack','←',1.15,'Back'], ['BrowserForward','→',1.15,'Forward'], ['BrowserRefresh','⟳',1.15,'Reload'],
-    ['F4','▣',1.15,'Full screen'], ['F5','▤',1.15,'Overview'], ['BrightnessDown','☼-',1.15,'Brightness down'], ['BrightnessUp','☼+',1.15,'Brightness up'],
-    ['AudioVolumeMute','🔇',1.15,'Mute'], ['AudioVolumeDown','🔉',1.15,'Volume down'], ['AudioVolumeUp','🔊',1.15,'Volume up'], ['Power','⏻',1.15,'Power']
+    ['Esc','esc',1.0,'Esc'],
+    ['BlankTop1','',1.0,'Not tested'], ['BlankTop2','',1.0,'Not tested'], ['BlankTop3','',1.0,'Not tested'], ['BlankTop4','',1.0,'Not tested'],
+    ['BlankTop5','',1.0,'Not tested'], ['BlankTop6','',1.0,'Not tested'], ['BlankTop7','',1.0,'Not tested'], ['BlankTop8','',1.0,'Not tested'],
+    ['BlankTop9','',1.0,'Not tested'], ['BlankTop10','',1.0,'Not tested'], ['BlankTop11','',1.0,'Not tested'], ['BlankTop12','',1.0,'Not tested'], ['BlankTop13','',1.0,'Not tested']
   ],
   [
-    ['Backquote','~\n`',0.8], ['Digit1','!\n1',0.95], ['Digit2','@\n2',0.95], ['Digit3','#\n3',0.95], ['Digit4','$\n4',0.95], ['Digit5','%\n5',0.95], ['Digit6','^\n6',0.95],
-    ['Digit7','&\n7',0.95], ['Digit8','*\n8',0.95], ['Digit9','(\n9',0.95], ['Digit0',')\n0',0.95], ['Minus','_\n-',0.95], ['Equal','+\n=',0.95], ['Backspace','backspace',1.45]
+    ['Backquote','~\n`',0.86], ['Digit1','!\n1',0.86], ['Digit2','@\n2',0.86], ['Digit3','#\n3',0.86], ['Digit4','$\n4',0.86], ['Digit5','%\n5',0.86], ['Digit6','^\n6',0.86],
+    ['Digit7','&\n7',0.86], ['Digit8','*\n8',0.86], ['Digit9','(\n9',0.86], ['Digit0',')\n0',0.86], ['Minus','_\n-',0.86], ['Equal','+\n=',0.86], ['Backspace','delete',1.6]
   ],
   [
-    ['Tab','tab',1.35], ['KeyQ','q',0.95], ['KeyW','w',0.95], ['KeyE','e',0.95], ['KeyR','r',0.95], ['KeyT','t',0.95], ['KeyY','y',0.95], ['KeyU','u',0.95],
-    ['KeyI','i',0.95], ['KeyO','o',0.95], ['KeyP','p',0.95], ['BracketLeft','{\n[',0.95], ['BracketRight','}\n]',0.95], ['Backslash','|\n\\',0.95]
+    ['Tab','tab',1.6], ['KeyQ','Q',0.95], ['KeyW','W',0.95], ['KeyE','E',0.95], ['KeyR','R',0.95], ['KeyT','T',0.95], ['KeyY','Y',0.95], ['KeyU','U',0.95],
+    ['KeyI','I',0.95], ['KeyO','O',0.95], ['KeyP','P',0.95], ['BracketLeft','{\n[',0.95], ['BracketRight','}\n]',0.95], ['Backslash','|\n\\',0.95]
   ],
   [
-    ['Search','⌕',1.6,'Launcher/Search'], ['KeyA','a',0.95], ['KeyS','s',0.95], ['KeyD','d',0.95], ['KeyF','f',0.95], ['KeyG','g',0.95], ['KeyH','h',0.95], ['KeyJ','j',0.95],
-    ['KeyK','k',0.95], ['KeyL','l',0.95], ['Semicolon',':\n;',0.95], ['Quote','”\n\'',0.95], ['Enter','enter',1.65]
+    ['Search','⌕',1.9,'Launcher/Search'], ['KeyA','A',0.95], ['KeyS','S',0.95], ['KeyD','D',0.95], ['KeyF','F',0.95], ['KeyG','G',0.95], ['KeyH','H',0.95], ['KeyJ','J',0.95],
+    ['KeyK','K',0.95], ['KeyL','L',0.95], ['Semicolon',':\n;',0.95], ['Quote','"\n\'',0.95], ['Enter','return',1.9]
   ],
   [
-    ['ShiftLeft','shift',2.15], ['KeyZ','z',0.95], ['KeyX','x',0.95], ['KeyC','c',0.95], ['KeyV','v',0.95], ['KeyB','b',0.95], ['KeyN','n',0.95], ['KeyM','m',0.95],
-    ['Comma','<\n,',0.95], ['Period','>\n.',0.95], ['Slash','?\n/',0.95], ['ShiftRight','shift',2.15]
+    ['ShiftLeft','shift',2.35], ['KeyZ','Z',0.95], ['KeyX','X',0.95], ['KeyC','C',0.95], ['KeyV','V',0.95], ['KeyB','B',0.95], ['KeyN','N',0.95], ['KeyM','M',0.95],
+    ['Comma','<\n,',0.95], ['Period','>\n.',0.95], ['Slash','?\n/',0.95], ['ShiftRight','shift',2.35]
   ],
   [
-    ['ControlLeft','ctrl',2.15], ['AltLeft','alt',2.0], ['Space','',5.25,'Space'], ['AltRight','alt',0.95], ['ControlRight','ctrl',0.95], ['ArrowLeft','‹',0.95], ['ArrowStack','',0.95,'Arrow up/down'], ['ArrowRight','›',0.95]
+    ['ControlLeft','ctrl',2.35], ['AltLeft','alt',2.35], ['Space','',5.5,'Space'], ['AltRight','alt',0.95], ['ControlRight','ctrl',0.95], ['ArrowLeft','◀',0.95], ['ArrowStack','',0.95,'Arrow up/down'], ['ArrowRight','▶',0.95]
   ]
 ];
 
@@ -552,9 +577,12 @@ function buildKeyboard() {
         return;
       }
       const key = document.createElement('div');
-      key.className = 'key';
-      key.id = `key-${code}`;
-      key.dataset.code = code;
+      const isBlank = String(code).startsWith('BlankTop');
+      key.className = isBlank ? 'key blank' : 'key';
+      if (!isBlank) {
+        key.id = `key-${code}`;
+        key.dataset.code = code;
+      }
       key.style.setProperty('--u', units);
       key.innerHTML = String(label).split('\n').map(part => `<span>${part}</span>`).join('');
       key.title = title || code;
@@ -571,8 +599,25 @@ function markKey(code, className, on = true) {
   });
 }
 
+function startKeyboardTest() {
+  state.keyboardListening = true;
+  $('startKeyboardBtn').disabled = true;
+  $('stopKeyboardBtn').disabled = false;
+  $('lastKey').textContent = 'Keyboard test running. Press keys now…';
+  if (!$('keyboardStatus').classList.contains('pass')) setStatus('keyboardStatus', 'Running', 'neutral');
+}
+
+function stopKeyboardTest() {
+  state.keyboardListening = false;
+  $('startKeyboardBtn').disabled = false;
+  $('stopKeyboardBtn').disabled = true;
+  document.querySelectorAll('.key.active').forEach(k => k.classList.remove('active'));
+  $('lastKey').textContent = `Keyboard test stopped · ${state.keyboard.size} keys detected`;
+  if (!$('keyboardStatus').classList.contains('pass')) setStatus('keyboardStatus', 'Stopped', 'neutral');
+}
+
 function handleKeyDown(e) {
-  if (!$('captureTyping').checked) return;
+  if (!state.keyboardListening) return;
   e.preventDefault();
   const code = e.code || e.key;
   state.keyboard.add(code);
@@ -594,12 +639,16 @@ function clearKeys() {
   document.querySelectorAll('.key').forEach(k => k.classList.remove('hit', 'active', 'missing'));
   $('testedKeyCount').textContent = '0';
   $('lastKey').textContent = 'Waiting for input…';
+  state.keyboardListening = false;
+  if ($('startKeyboardBtn')) $('startKeyboardBtn').disabled = false;
+  if ($('stopKeyboardBtn')) $('stopKeyboardBtn').disabled = true;
   setStatus('keyboardStatus', 'Not tested', 'neutral');
 }
 
 function resetAll() {
   clearKeys();
   stopWebcam();
+  stopMicTest();
   state.speaker = 'not tested';
   state.mic = 'not tested';
   state.webcam = 'not tested';
@@ -678,10 +727,13 @@ $('speakerBtn').addEventListener('click', () => speakerTest(0, 'both'));
 $('speakerLeftBtn').addEventListener('click', () => speakerTest(-1, 'left'));
 $('speakerRightBtn').addEventListener('click', () => speakerTest(1, 'right'));
 $('micBtn').addEventListener('click', startMicTest);
+$('stopMicBtn').addEventListener('click', stopMicTest);
 $('webcamBtn').addEventListener('click', startWebcamTest);
 $('stopWebcamBtn').addEventListener('click', stopWebcam);
 $('snapshotBtn').addEventListener('click', takeSnapshot);
 $('clearKeysBtn').addEventListener('click', clearKeys);
+$('startKeyboardBtn').addEventListener('click', startKeyboardTest);
+$('stopKeyboardBtn').addEventListener('click', stopKeyboardTest);
 if ($('reportBtn')) $('reportBtn').addEventListener('click', generateReport);
 if ($('copyReportBtn')) $('copyReportBtn').addEventListener('click', copyReport);
 if ($('downloadReportBtn')) $('downloadReportBtn').addEventListener('click', downloadReport);

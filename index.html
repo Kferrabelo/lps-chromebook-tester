@@ -52,12 +52,15 @@
       <div class="card-head">
         <div class="title-row">
           <span class="tile-icon">⌨</span>
-          <div><h2>Keyboard</h2><p>Full-size ChromeOS keydown / keyup test</p></div>
+          <div><h2>Keyboard</h2><p>ChromeOS keydown / keyup test</p></div>
         </div>
         <span class="status neutral" id="keyboardStatus">Not tested</span>
       </div>
-      <div class="split-meta"><span>Press every key. Tested keys turn green.</span><strong><span id="testedKeyCount">0</span> keys</strong></div>
-      <label class="checkbox"><input type="checkbox" id="captureTyping" checked /> Capture typing for this test</label>
+      <div class="split-meta"><span>Click Start keyboard, then press each key. Tested keys turn green.</span><strong><span id="testedKeyCount">0</span> keys</strong></div>
+      <div class="button-row keyboard-controls">
+        <button id="startKeyboardBtn" class="primary">Start keyboard test</button>
+        <button id="stopKeyboardBtn" disabled>Stop keyboard test</button>
+      </div>
       <div id="keyboardLayout" class="keyboard-layout" aria-label="ChromeOS keyboard layout"></div>
       <div class="keyboard-footer">
         <div id="lastKey" class="details mono">Waiting for input…</div>
@@ -78,7 +81,10 @@
       <div class="level-row"><span>Level</span><strong id="micPercent">0%</strong></div>
       <div class="meter"><div id="micMeter" class="meter-fill"></div></div>
       <p>Speak or tap near the mic. Bars should react to sound.</p>
-      <button id="micBtn" class="primary">Start mic test</button>
+      <div class="button-row">
+        <button id="micBtn" class="primary">Start mic test</button>
+        <button id="stopMicBtn" disabled>Stop mic test</button>
+      </div>
       <div id="micDetails" class="details"></div>
     </section>
 
