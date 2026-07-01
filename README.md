@@ -34,3 +34,8 @@ Embedded the OpenSpeedTest widget using the provided OST iframe code.
 
 - Moved System & Browser Info next to the Speed Test card on wide screens.
 - System info remains informational only and does not affect Pass/Fail totals.
+
+
+Version 16 update
+
+Added a web app manifest and icon so ChromeOS kiosk/PWA launch should stay scoped to https://kferrabelo.github.io/lps-chromebook-tester/.
